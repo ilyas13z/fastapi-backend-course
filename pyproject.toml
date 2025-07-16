@@ -1,0 +1,7 @@
+[tool.ruff]
+lint.select = ["E", "F", "I"]
+
+line-length = 88
+
+# Разрешить автоматические исправления (если запускаешь с --fix)
+lint.fixable = ["ALL"]
