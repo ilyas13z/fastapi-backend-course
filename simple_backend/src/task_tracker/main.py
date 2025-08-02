@@ -1,6 +1,7 @@
 import os
 
 from json_func import JsonBinWorker
+from llm_func import LlmWorker
 from dotenv import load_dotenv
 
 
@@ -13,10 +14,12 @@ app = FastAPI()
 
 # file_worker = JsonFileWorker("tasks.json")
 file_worker = JsonBinWorker(os.getenv("API_KEY_JSONBIN"))
+description_worker = LlmWorker(os.getenv("API_KEY_LLM"), os.getenv("USER_ID_LLM"))
 
 class Task(BaseModel):
     name: str
     status: str
+    description: str
 
 
 @app.get("/tasks")
@@ -25,18 +28,18 @@ def get_tasks():
     return tasks_dict
 
 @app.post("/tasks")
-def create_task(task: str):
-    task = task.split()
+def create_task(name: str, status: str):
     tasks_dict = file_worker.read()
+    description = description_worker.get_description(name)
 
     if len(tasks_dict) == 0:
-        tasks_dict[0] = [task[0], task[1]]
+        tasks_dict[0] = [name, status, description]
         task_id = 0
     else:
         task_id = list(tasks_dict.keys())[-1] + 1
-        tasks_dict[task_id] = [task[0], task[1]]
+        tasks_dict[task_id] = [name, status, description]
     file_worker.write(tasks_dict)
-    return {"Task id": task_id, "Task name": task[0], "Task status": task[1]}
+    return {"Task id": task_id, "Task name": name, "Status": status, "Description": description}
 
     
 
@@ -45,9 +48,9 @@ def update_task(task_id: int, task: Task):
     try:
         tasks_dict = file_worker.read()
         if task_id in tasks_dict.keys():
-            tasks_dict[task_id] = [task.name, task.status]
+            tasks_dict[task_id] = [task.name, task.status, task.description]
             file_worker.write(tasks_dict)
-            return {"Task name": task.name, "Task status": task.status}
+            return {"Task name": task.name, "Status": task.status, "Description": task.description}
         else:
             raise KeyError
     except KeyError:
@@ -62,6 +65,6 @@ def delete_task(task_id: int):
         temp = tasks_dict[task_id]
         del tasks_dict[task_id]
         file_worker.write(tasks_dict)
-        return {"Task id": task_id, "Task name": temp[0], "Task status": temp[1]}
+        return {"Task id": task_id, "Task name": temp[0]}
     except:
         return {"Error": "Deleting went wrong"}
