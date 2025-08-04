@@ -1,5 +1,6 @@
 [tool.ruff]
 lint.select = ["E", "F", "I"]
+lint.ignore = ["E722"]
 
 line-length = 79
 
